@@ -19,3 +19,12 @@ Renders a custom screensaver displaying book information in Kobo-style layout, i
 
 > **Based on:** [PedroMachado1/Koreader.patches](https://github.com/PedroMachado1/Koreader.patches/blob/main/2-kobo-style-screensaver.lua)  
 > **Focus of modification:** Enhanced wallpaper selection mechanism with support for both directory and file paths.
+
+### [🞂 expand-screensaver-info](2-expand-screensaver-info.lua)
+
+Expands the available text variables for screensavers (and status bar) by injecting custom tokens. Features a caching mechanism that saves the last active book's statistics, allowing variables to display correctly even when the device is suspended from the file manager or main menu.
+
+**Available Tokens**:
+- $L: Time read today (e.g., "1h 30min").
+- $H: Estimated time left to finish the book based on reading statistics.
+- $C: Current chapter title.

@@ -81,9 +81,9 @@ local DEFAULTS = {
     QUOTE_SOURCE_HIGHLIGHTS = true,
     QUOTE_SOURCE_BOOKMARKS = true,
     MAX_TITLE_CHARS = 40,
-    MAX_CHAPTER_CHARS = 30,
+    MAX_CHAPTER_CHARS = 60,
     MAX_QUOTE_CHARS = 500, -- Aumentado para suportar parágrafos
-    BOX_MARGIN_BOTTOM = 80,
+    BOX_MARGIN_BOTTOM = 40,
     BOX_BORDER_RADIUS = 0,
     CUSTOM_WALLPAPER = nil,
 }
@@ -864,14 +864,14 @@ local function buildKoboStyleWidget(book_data, ui)
         text_color_medium = Blitbuffer.COLOR_GRAY_B  -- Cor intermediária para citação
         text_color_light = Blitbuffer.COLOR_GRAY_E
         border_color = Blitbuffer.COLOR_WHITE
-        border_size = 1
+        border_size = 1.5
     else
         bg_color = Blitbuffer.COLOR_WHITE
         text_color = Blitbuffer.COLOR_BLACK
         text_color_medium = Blitbuffer.COLOR_GRAY_5  -- Cor intermediária para citação (mais escura)
         text_color_light = Blitbuffer.COLOR_GRAY_3
         border_color = Blitbuffer.COLOR_BLACK
-        border_size = 1
+        border_size = 1.5
     end
     
     -- Fontes
@@ -1200,6 +1200,7 @@ _G.dofile = function(filepath)
                 local SpinWidget = require("ui/widget/spinwidget")
                 return {
                     text = T(title_key),
+                    keep_menu_open = true,
                     callback = function()
                         local current = getSetting(setting_key, default_value)
                         local spin = SpinWidget:new{
@@ -1288,13 +1289,13 @@ _G.dofile = function(filepath)
                     },
                     {
                         text = "Long-press file or folder to select",
-                        callback = function()
+                        keep_menu_open = true,
+                        callback = function(touchmenu)
                             local PathChooser = require("ui/widget/pathchooser")
                             local UIManager = require("ui/uimanager")
-                            local Notification = require("ui/widget/notification")
 
                             local chooser = PathChooser:new{
-                                title = "Long-press to select wallpaper",
+                                title = "Long-press to select file or folder",
                                 select_file = true,
                                 select_directory = true,
                                 show_files = true,
@@ -1313,20 +1314,26 @@ _G.dofile = function(filepath)
                                             SETTINGS.CUSTOM_WALLPAPER,
                                             path
                                         )
+                                        if touchmenu then 
+                                            touchmenu:updateItems() 
+                                        end
                                     end
                                 end,
                             }
-
                             UIManager:show(chooser)
                         end,
                     },
                     {
                         text = "Clear custom wallpaper",
+                        keep_menu_open = true,
                         enabled_func = function()
                             return getSetting(SETTINGS.CUSTOM_WALLPAPER) ~= nil
                         end,
-                        callback = function()
+                        callback = function(touchmenu)
                             G_reader_settings:delSetting(SETTINGS.CUSTOM_WALLPAPER)
+                            if touchmenu then 
+                                touchmenu:updateItems() 
+                            end
                         end,
                     },
                     -- Seção: Elementos Visíveis

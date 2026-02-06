@@ -57,6 +57,7 @@ local SETTINGS = {
     BOX_MARGIN_BOTTOM = "kobo_style_box_margin_bottom",
     -- Estilo do box
     BOX_BORDER_RADIUS = "kobo_style_box_border_radius",
+    BOX_BORDER_WIDTH = "kobo_style_box_border_width",
     CUSTOM_WALLPAPER = "kobo_style_custom_wallpaper",
 }
 
@@ -85,6 +86,7 @@ local DEFAULTS = {
     MAX_QUOTE_CHARS = 500, -- Aumentado para suportar parágrafos
     BOX_MARGIN_BOTTOM = 40,
     BOX_BORDER_RADIUS = 0,
+    BOX_BORDER_WIDTH = 1,
     CUSTOM_WALLPAPER = nil,
 }
 
@@ -160,6 +162,7 @@ local TRANSLATIONS = {
         -- Posicionamento
         margin_bottom = "Margem inferior (px)",
         box_border_radius = "Arredondamento dos cantos (px)",
+        box_border_width = "Espessura da borda (px)",
         
         -- Ações
         restore_defaults = "Restaurar padrões",
@@ -238,6 +241,7 @@ local TRANSLATIONS = {
         -- Positioning
         margin_bottom = "Bottom margin (px)",
         box_border_radius = "Box border radius (px)",
+        box_border_width = "Border width (px)",
         
         -- Actions
         restore_defaults = "Restore defaults",
@@ -794,6 +798,7 @@ local function buildKoboStyleWidget(book_data, ui)
     local max_quote_chars = getSetting(SETTINGS.MAX_QUOTE_CHARS, DEFAULTS.MAX_QUOTE_CHARS)
     local box_margin_bottom = math.floor(getSetting(SETTINGS.BOX_MARGIN_BOTTOM, DEFAULTS.BOX_MARGIN_BOTTOM) * global_scale)
     local box_border_radius = math.floor(getSetting(SETTINGS.BOX_BORDER_RADIUS, DEFAULTS.BOX_BORDER_RADIUS) * global_scale)
+    local box_border_width = math.floor(getSetting(SETTINGS.BOX_BORDER_WIDTH, DEFAULTS.BOX_BORDER_WIDTH) * global_scale)
     
     -- Dados do livro
     local book_title = book_data.title or T("no_title")
@@ -857,21 +862,19 @@ local function buildKoboStyleWidget(book_data, ui)
     
     -- Cores baseadas no modo escuro
     local dark_mode = G_reader_settings:isTrue(SETTINGS.DARK_MODE)
-    local bg_color, text_color, text_color_medium, text_color_light, border_color, border_size
+    local bg_color, text_color, text_color_medium, text_color_light, border_color
     if dark_mode then
         bg_color = Blitbuffer.COLOR_BLACK
         text_color = Blitbuffer.COLOR_WHITE
         text_color_medium = Blitbuffer.COLOR_GRAY_B  -- Cor intermediária para citação
         text_color_light = Blitbuffer.COLOR_GRAY_E
         border_color = Blitbuffer.COLOR_WHITE
-        border_size = 1.5
     else
         bg_color = Blitbuffer.COLOR_WHITE
         text_color = Blitbuffer.COLOR_BLACK
         text_color_medium = Blitbuffer.COLOR_GRAY_5  -- Cor intermediária para citação (mais escura)
         text_color_light = Blitbuffer.COLOR_GRAY_3
         border_color = Blitbuffer.COLOR_BLACK
-        border_size = 1.5
     end
     
     -- Fontes
@@ -977,7 +980,7 @@ local function buildKoboStyleWidget(book_data, ui)
     
     local info_box = FrameContainer:new{
         background = bg_color,
-        bordersize = border_size,
+        bordersize = box_border_width,
         color = border_color,
         radius = box_border_radius,
         padding = padding,
@@ -1025,7 +1028,7 @@ local function buildKoboStyleWidget(book_data, ui)
         
         quote_box_container = FrameContainer:new{
             background = bg_color,
-            bordersize = border_size,
+            bordersize = box_border_width,
             color = border_color,
             radius = box_border_radius,
             padding = padding,
@@ -1465,6 +1468,7 @@ _G.dofile = function(filepath)
                     },
                     createSizeSpinner("margin_bottom", SETTINGS.BOX_MARGIN_BOTTOM, DEFAULTS.BOX_MARGIN_BOTTOM, 0, 200, 10),
                     createSizeSpinner("box_border_radius", SETTINGS.BOX_BORDER_RADIUS, DEFAULTS.BOX_BORDER_RADIUS, 0, 50, 2),
+                    createSizeSpinner("box_border_width", SETTINGS.BOX_BORDER_WIDTH, DEFAULTS.BOX_BORDER_WIDTH, 1, 15, 1),
                     
                     -- Seção: Ações
                     {
@@ -1497,6 +1501,7 @@ _G.dofile = function(filepath)
                             G_reader_settings:delSetting(SETTINGS.MAX_QUOTE_CHARS)
                             G_reader_settings:delSetting(SETTINGS.BOX_MARGIN_BOTTOM)
                             G_reader_settings:delSetting(SETTINGS.BOX_BORDER_RADIUS)
+                            G_reader_settings:delSetting(SETTINGS.BOX_BORDER_WIDTH)
                             
                             local Notification = require("ui/widget/notification")
                             UIManager:show(Notification:new{

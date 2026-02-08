@@ -28,3 +28,11 @@ Expands the available text variables for screensavers (and status bar) by inject
 - $L: Time read today (e.g., "1h 30min").
 - $H: Estimated time left to finish the book based on reading statistics.
 - $C: Current chapter title.
+
+### [🞂 pt-no-blank-foldercovers](2--pt-no-blank-foldercovers.lua)
+
+Modifies the folder cover display in Mosaic/Grid view. If a folder contains fewer than 4 books, it removes the empty placeholders/gaps, displaying only the available covers.
+
+> **Based on:** [tmfsd/KOReader-patches](https://github.com/tmfsd/KOReader-patches/blob/main/2-pt-no-blank-foldercovers.lua)  
+> **Focus of modification:** Refactored internal function names to match standard KOReader naming conventions (e.g., `build_grid`).  
+> **Compatibility Note:** This refactor allows the **Automatic Series Grouping** patch to hook into and inherit this "no-blank" behavior for virtual series folders. **Crucial:** This patch must load *before* the series patch (ensure alphabetical precedence).

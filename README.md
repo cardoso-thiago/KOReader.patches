@@ -36,3 +36,7 @@ Modifies the folder cover display in Mosaic/Grid view. If a folder contains fewe
 > **Based on:** [tmfsd/KOReader-patches](https://github.com/tmfsd/KOReader-patches/blob/main/2-pt-no-blank-foldercovers.lua)  
 > **Focus of modification:** Refactored internal function names to match standard KOReader naming conventions (e.g., `build_grid`).  
 > **Compatibility Note:** This refactor allows the **Automatic Series Grouping** patch to hook into and inherit this "no-blank" behavior for virtual series folders. **Crucial:** This patch must load *before* the series patch (ensure alphabetical precedence).
+
+### [🞂 wifi-auto-off-monitor](2-wifi-auto-off-monitor.lua)
+
+Monitors WiFi connection and displays a confirmation dialog after 30 seconds of continuous WiFi activity. Allows users to either keep WiFi enabled or turn it off with a single action. The dialog won't appear while the device is in screensaver mode, preventing unnecessary interruptions during sleep.

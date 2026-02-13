@@ -15,11 +15,24 @@ local function titleCase(str)
 
     str = utf8proc.lowercase_dumb(str)
 
-    return (str:gsub("(%S)(%S*)", function(first, rest)
+    return (str:gsub("(%S+)", function(word)
+        local b = word:byte(1)
+        local len = 1
+        
+        if b >= 240 then
+            len = 4
+        elseif b >= 224 then
+            len = 3
+        elseif b >= 192 then
+            len = 2
+        end
+
+        local first = word:sub(1, len)
+        local rest = word:sub(len + 1)
+
         return utf8proc.uppercase_dumb(first) .. rest
     end))
 end
-
 
 local function formatDuration(secs)
     local s = tonumber(secs)

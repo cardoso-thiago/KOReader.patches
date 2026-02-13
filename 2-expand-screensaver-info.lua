@@ -5,9 +5,21 @@ local lfs = require("libs/libkoreader-lfs")
 local _ = require("gettext")
 local BookInfo = require("apps/filemanager/filemanagerbookinfo")
 local ReaderUI = require("apps/reader/readerui")
+local utf8proc = require("ffi/utf8proc")
 
 local SETTING_KEY = "stats_patch_last_data"
 local STATISTICS_DB_PATH = DataStorage:getSettingsDir() .. "/statistics.sqlite3"
+
+local function titleCase(str)
+    if not str then return str end
+
+    str = utf8proc.lowercase_dumb(str)
+
+    return (str:gsub("(%S)(%S*)", function(first, rest)
+        return utf8proc.uppercase_dumb(first) .. rest
+    end))
+end
+
 
 local function formatDuration(secs)
     local s = tonumber(secs)
@@ -144,7 +156,7 @@ BookInfo.expandString = function(self, str, file, timestamp)
         if str:find("$C") then
             local chapter_text = "N/A"
             if current_data.chapter and current_data.chapter ~= "" then
-                chapter_text = current_data.chapter
+                chapter_text = titleCase(current_data.chapter)
             end
             result = result:gsub("$C", chapter_text)
         end

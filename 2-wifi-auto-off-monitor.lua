@@ -5,6 +5,7 @@ local Notification = require("ui/widget/notification")
 local Device = require("device")
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
+local PluginLoader = require("pluginloader")
 
 if not NetworkMgr._wifi_monitor_patched then
     NetworkMgr._wifi_monitor_patched = true
@@ -21,6 +22,21 @@ if not NetworkMgr._wifi_monitor_patched then
     
     if not original_turnOnWifi then logger.error("[WiFiMonitor] CRITICAL: turnOnWifi nil") end
     if not original_turnOffWifi then logger.error("[WiFiMonitor] CRITICAL: turnOffWifi nil") end
+
+    local function getSSHPlugin()
+        if not PluginLoader then return nil end
+        return PluginLoader:getPluginInstance("SSH")
+    end
+    
+    function WiFiMonitor:stopSSHIfRunning()
+        local ssh_plugin = getSSHPlugin()
+        if ssh_plugin and ssh_plugin:isRunning() then
+            logger.info("[WiFiMonitor] Stopping SSH server...")
+            ssh_plugin:stop()
+            return true
+        end
+        return false
+    end
     
     function WiFiMonitor:startWiFiTimer()
         if not WiFiMonitor.is_monitoring then return end
@@ -62,11 +78,18 @@ if not NetworkMgr._wifi_monitor_patched then
         if WiFiMonitor.dialog_showing then return end
         
         WiFiMonitor.dialog_showing = true
+
+        local text_msg = _("WiFi has been on for more than 30 seconds.\n\nDo you want to keep WiFi on or turn it off?")
+        
+        local ssh_plugin = getSSHPlugin()
+        if ssh_plugin and ssh_plugin:isRunning() then
+            text_msg = text_msg .. "\n\n" .. _("(SSH Server is running and will be stopped)")
+        end
         
         local dialog
         dialog = ConfirmBox:new{
             title = _("WiFi Auto-Off Monitor"),
-            text = _("WiFi has been on for more than 30 seconds.\n\nDo you want to keep WiFi on or turn it off?"),
+            text = text_msg,
             ok_text = _("Keep On"),
             cancel_text = _("Turn Off"),
             ok_callback = function()
@@ -82,6 +105,8 @@ if not NetworkMgr._wifi_monitor_patched then
                 if dialog then UIManager:close(dialog) end
                 
                 WiFiMonitor.is_monitoring = false
+                
+                WiFiMonitor:stopSSHIfRunning()
                 
                 if original_turnOffWifi then
                     original_turnOffWifi(NetworkMgr, function()

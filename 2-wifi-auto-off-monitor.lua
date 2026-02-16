@@ -6,6 +6,14 @@ local Device = require("device")
 local _ = require("gettext")
 local NetworkMgr = require("ui/network/manager")
 local PluginLoader = require("pluginloader")
+local SpinWidget = require("ui/widget/spinwidget")
+
+local CONFIG = {
+    check_interval = 30,
+    snooze_default_value = 1,
+    snooze_max_minutes = 15,
+    handle_ssh = true,
+}
 
 if not NetworkMgr._wifi_monitor_patched then
     NetworkMgr._wifi_monitor_patched = true
@@ -15,6 +23,8 @@ if not NetworkMgr._wifi_monitor_patched then
         wifi_timer = nil,
         dialog_showing = false,
         current_dialog = nil,
+        snooze_timer = nil,
+        is_snoozed = false,
     }
     
     local original_turnOnWifi = NetworkMgr.turnOnWifi
@@ -31,7 +41,7 @@ if not NetworkMgr._wifi_monitor_patched then
     function WiFiMonitor:stopSSHIfRunning()
         local ssh_plugin = getSSHPlugin()
         if ssh_plugin and ssh_plugin:isRunning() then
-            logger.info("[WiFiMonitor] Stopping SSH server...")
+            logger.dbg("[WiFiMonitor] Stopping SSH server...")
             ssh_plugin:stop()
             return true
         end
@@ -46,7 +56,7 @@ if not NetworkMgr._wifi_monitor_patched then
             WiFiMonitor.wifi_timer = nil
         end
         
-        WiFiMonitor.wifi_timer = UIManager:scheduleIn(30, function()
+        WiFiMonitor.wifi_timer = UIManager:scheduleIn(CONFIG.check_interval, function()
             WiFiMonitor:checkWiFiStatusAndNotify()
         end)
     end
@@ -62,9 +72,75 @@ if not NetworkMgr._wifi_monitor_patched then
             return
         end
         
+        if WiFiMonitor.is_snoozed then
+            logger.dbg("[WiFiMonitor] WiFi is snoozed, skipping check")
+            return
+        end
+        
         if not WiFiMonitor.dialog_showing then
             self:showTimeoutDialog()
         end
+    end
+    
+    function WiFiMonitor:showSnoozePickerDialog()
+        if Device.screen_saver_mode then
+            return
+        end
+        
+        local snooze_confirmed = false
+        
+        local snooze_widget = SpinWidget:new{
+            title_text = _("WiFi Snooze"),
+            info_text = _("Select snooze duration in minutes"),
+            width = math.floor(math.min(Device.screen:getWidth(), Device.screen:getHeight()) * 0.6),
+            value = CONFIG.snooze_default_value,
+            value_min = 1,
+            value_max = CONFIG.snooze_max_minutes,
+            value_step = 1,
+            value_hold_step = 1,
+            unit = _("min"),
+            ok_text = _("Snooze"),
+            cancel_text = _("Cancel"),
+            ok_always_enabled = true,
+            callback = function(snooze_spin)
+                snooze_confirmed = true
+                local snooze_minutes = snooze_spin.value
+                local snooze_seconds = snooze_minutes * 60
+                
+                logger.dbg(string.format("[WiFiMonitor] WiFi snoozed for %d minutes", snooze_minutes))
+                
+                WiFiMonitor.is_snoozed = true
+                
+                if WiFiMonitor.snooze_timer then
+                    UIManager:unschedule(WiFiMonitor.snooze_timer)
+                end
+                
+                WiFiMonitor.snooze_timer = UIManager:scheduleIn(snooze_seconds, function()
+                    WiFiMonitor.is_snoozed = false
+                    WiFiMonitor.snooze_timer = nil
+                    logger.dbg("[WiFiMonitor] Snooze ended, resuming WiFi checks")
+                    if WiFiMonitor.is_monitoring then
+                        WiFiMonitor:checkWiFiStatusAndNotify()
+                    end
+                end)
+                
+                UIManager:show(Notification:new{
+                    text = string.format(_("WiFi checks snoozed for %d minute(s)"), snooze_minutes),
+                    timeout = 2,
+                })
+            end,
+            cancel_callback = function()
+                logger.dbg("[WiFiMonitor] Snooze cancelled, returning to WiFi dialog")
+                WiFiMonitor:showTimeoutDialog()
+            end,
+            close_callback = function()
+                if not snooze_confirmed then
+                    logger.dbg("[WiFiMonitor] Snooze picker closed, returning to WiFi dialog")
+                    WiFiMonitor:showTimeoutDialog()
+                end
+            end,
+        }
+        UIManager:show(snooze_widget)
     end
     
     function WiFiMonitor:showTimeoutDialog()
@@ -79,10 +155,10 @@ if not NetworkMgr._wifi_monitor_patched then
         
         WiFiMonitor.dialog_showing = true
 
-        local text_msg = _("WiFi has been on for more than 30 seconds.\n\nDo you want to keep WiFi on or turn it off?")
+        local text_msg = string.format(_("WiFi has been on for more than %d seconds.\n\nDo you want to keep WiFi on or turn it off?"), CONFIG.check_interval)
         
         local ssh_plugin = getSSHPlugin()
-        if ssh_plugin and ssh_plugin:isRunning() then
+        if CONFIG.handle_ssh and ssh_plugin and ssh_plugin:isRunning() then
             text_msg = text_msg .. "\n\n" .. _("(SSH Server is running and will be stopped)")
         end
         
@@ -92,6 +168,19 @@ if not NetworkMgr._wifi_monitor_patched then
             text = text_msg,
             ok_text = _("Keep On"),
             cancel_text = _("Turn Off"),
+            dismissable = false,
+            other_buttons = {{
+                {
+                    text = _("Snooze"),
+                    callback = function()
+                        WiFiMonitor.dialog_showing = false
+                        WiFiMonitor.current_dialog = nil
+                        if dialog then UIManager:close(dialog) end
+                        WiFiMonitor:showSnoozePickerDialog()
+                    end,
+                }
+            }},
+            other_buttons_first = true,
             ok_callback = function()
                 WiFiMonitor.dialog_showing = false
                 WiFiMonitor.current_dialog = nil
@@ -106,7 +195,9 @@ if not NetworkMgr._wifi_monitor_patched then
                 
                 WiFiMonitor.is_monitoring = false
                 
-                WiFiMonitor:stopSSHIfRunning()
+                if CONFIG.handle_ssh then
+                    WiFiMonitor:stopSSHIfRunning()
+                end
                 
                 if original_turnOffWifi then
                     original_turnOffWifi(NetworkMgr, function()
@@ -125,10 +216,16 @@ if not NetworkMgr._wifi_monitor_patched then
     
     function NetworkMgr:turnOnWifi(complete_callback, interactive)
         WiFiMonitor.dialog_showing = false
+        WiFiMonitor.is_snoozed = false
         
         if WiFiMonitor.wifi_timer then
             UIManager:unschedule(WiFiMonitor.wifi_timer)
             WiFiMonitor.wifi_timer = nil
+        end
+        
+        if WiFiMonitor.snooze_timer then
+            UIManager:unschedule(WiFiMonitor.snooze_timer)
+            WiFiMonitor.snooze_timer = nil
         end
         
         if WiFiMonitor.current_dialog then
@@ -148,10 +245,16 @@ if not NetworkMgr._wifi_monitor_patched then
     
     function NetworkMgr:turnOffWifi(complete_callback)
         WiFiMonitor.is_monitoring = false
+        WiFiMonitor.is_snoozed = false
         
         if WiFiMonitor.wifi_timer then
             UIManager:unschedule(WiFiMonitor.wifi_timer)
             WiFiMonitor.wifi_timer = nil
+        end
+        
+        if WiFiMonitor.snooze_timer then
+            UIManager:unschedule(WiFiMonitor.snooze_timer)
+            WiFiMonitor.snooze_timer = nil
         end
         
         if WiFiMonitor.dialog_showing and WiFiMonitor.current_dialog then
@@ -166,7 +269,7 @@ if not NetworkMgr._wifi_monitor_patched then
     end
 
     if NetworkMgr:isWifiOn() then
-        logger.info("[WiFiMonitor] WiFi detected ON at startup.")
+        logger.info("[WiFiMonitor] WiFi is ON at startup, starting monitor")
         WiFiMonitor.is_monitoring = true
         WiFiMonitor:startWiFiTimer()
     end

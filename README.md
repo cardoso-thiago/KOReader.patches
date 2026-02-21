@@ -40,3 +40,7 @@ Modifies the folder cover display in Mosaic/Grid view. If a folder contains fewe
 ### [🞂 wifi-auto-off-monitor](2-wifi-auto-off-monitor.lua)
 
 Monitors WiFi connection and displays a confirmation dialog after 30 seconds of continuous WiFi activity. Allows users to either keep WiFi enabled or turn it off with a single action. The dialog won't appear while the device is in screensaver mode, preventing unnecessary interruptions during sleep.
+
+### [🞂 hide-single-page-nav](2-hide-single-page-nav.lua)
+
+Hides the entire bottom navigation bar (<< < 1 > >>) in the file manager when a folder contains only one page of items.

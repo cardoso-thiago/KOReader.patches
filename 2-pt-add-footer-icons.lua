@@ -6,6 +6,8 @@ local ICON_RAM = ""
 local SSH_ON   = ""
 local SSH_OFF  = ""
 
+local _patched = false
+
 local function getFooterExtras()
     local parts = {}
 
@@ -33,7 +35,7 @@ local function getFooterExtras()
         if ssh then
             if ssh:isRunning() then
                 table.insert(parts, SSH_ON)
-            else
+            elseif SSH_OFF ~= "" then
                 table.insert(parts, SSH_OFF)
             end
         end
@@ -43,6 +45,8 @@ local function getFooterExtras()
 end
 
 local function patchCoverBrowser(plugin)
+    if _patched then return end
+
     local CoverMenu = require("covermenu")
     local BookInfoManager = require("bookinfomanager")
     local Menu = require("ui/widget/menu")
@@ -68,6 +72,7 @@ local function patchCoverBrowser(plugin)
 
     CoverMenu.updatePageInfo = patched
     Menu.updatePageInfo = patched
+    _patched = true
 end
 
 userpatch.registerPatchPluginFunc("coverbrowser", patchCoverBrowser)

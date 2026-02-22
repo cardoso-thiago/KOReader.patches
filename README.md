@@ -44,3 +44,12 @@ Monitors WiFi connection and displays a confirmation dialog after 30 seconds of 
 ### [🞂 hide-single-page-nav](2-hide-single-page-nav.lua)
 
 Hides the entire bottom navigation bar (<< < 1 > >>) in the file manager when a folder contains only one page of items.
+
+### [🞂 pt-add-footer-icons](2-pt-add-footer-icons.lua)
+
+Adds new info to the **Project Title** (CoverBrowser) plugin footer.
+
+* **RAM:** Displays memory usage as a percentage.
+* **SSH:** The icon only appears when the SSH server is running, hiding when turned off to save space.
+
+**Requirement:** "Footer" > "Device Info" must be enabled in the Project Title settings.

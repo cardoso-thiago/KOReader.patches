@@ -2,7 +2,7 @@
 
 **Personal patches for use with**
 <sub>
-[<img src="https://raw.githubusercontent.com/koreader/koreader.github.io/master/koreader-logo.png" style="width:8%; height:auto;">](https://github.com/koreader/koreader)
+[<img src="https://raw.githubusercontent.com/koreader/koreader.github.io/master/koreader-logo.png" style="width:15%; height:auto;">](https://github.com/koreader/koreader)
 </sub>
 
 ### [🞂 confirm-first-open](2-confirm-first-open.lua)
@@ -53,3 +53,123 @@ Adds new info to the **Project Title** (CoverBrowser) plugin footer.
 * **SSH:** The icon only appears when the SSH server is running, hiding when turned off to save space.
 
 **Requirement:** "Footer" > "Device Info" must be enabled in the Project Title settings.
+
+### [🞂 title-navbar](2-title-navbar.lua)
+
+Replaces the KOReader file browser title bar with a **custom status bar** and adds a **bottom navigation bar** with configurable action buttons.
+
+> **Inspired by:** [u/doctorhetfield](https://www.reddit.com/user/doctorhetfield/) (initial concept)  
+> **Code references:** [qewer33/koreader-patches](https://github.com/qewer33/koreader-patches) (pagination hiding approach and general patch architecture)
+
+---
+
+#### Bottom Navigation Bar
+
+A fixed bar at the bottom of the file browser with up to 6 configurable buttons:
+
+| Button | Action |
+|--------|--------|
+| `home` | Navigate to the home directory |
+| `folder_up` | Go to the parent folder (blocked at home if `lock_home` is enabled) |
+| `continue` | Open the last read book |
+| `context_menu` | Open the folder context menu |
+| `settings` | Open KOReader settings menu |
+| `restart` | Flush settings and restart KOReader |
+
+Each button can be individually enabled/disabled and given a custom label via the `buttons` table in `CFG`.
+
+---
+
+#### Status Bar (Titlebar)
+
+A custom top bar that replaces the default KOReader title. The left side shows the time and optional contextual info; the right side shows device indicators.
+
+**Left side modes** (`titlebar_left`):
+
+- `"clock"` — time only
+- `"info"` — time · device model (on home folder) or time · current folder name (elsewhere)
+
+**Right side indicators** (each individually toggleable):
+
+- WiFi status
+- Frontlight and warmth, if the device supports it. On Android, requires a KOReader restart to update.
+- RAM usage with configurable pattern
+- SSH indicator, shown only while the server is running
+- Battery
+
+---
+
+#### RAM Display Pattern
+
+The RAM indicator uses a free-form pattern string with the following placeholders:
+
+| Placeholder | Value |
+|-------------|-------|
+| `$k` | KOReader RAM usage (%) |
+| `$K` | KOReader RAM usage (MB) |
+| `$Kg` | KOReader RAM usage (GB, 2 decimal places) |
+| `$u` | System RAM in use (%) |
+| `$U` | System RAM in use (MB) |
+| `$Ug` | System RAM in use (GB, 2 decimal places) |
+| `$A` | Total device RAM (MB) |
+| `$Ag` | Total device RAM (GB, 2 decimal places) |
+
+Any literal text and symbols can be used freely between placeholders. Examples:
+
+- `$k%` → `3%` *(default)*
+- `$k% ($KMB)` → `3% (48MB)`
+- `$k% ($KMB / $AgGB)` → `3% (48MB / 7.62GB)`
+
+---
+
+#### Icon Packs
+
+Icons are loaded from `koreader/icons/tnb-icons/`. Each subfolder inside `tnb-icons/` is automatically detected as an icon pack and listed in the settings menu. If the folder does not exist or contains no subfolders, the icon pack option is disabled.
+
+**Folder structure:**
+
+```
+koreader/
+└── icons/
+    └── tnb-icons/
+        ├── HeroIcons/
+        │   ├── home.svg
+        │   ├── up.svg
+        │   ├── last.svg
+        │   ├── menu.svg
+        │   ├── settings.svg
+        │   └── restart.svg
+        └── MyCustomPack/
+            ├── home.svg
+            └── ...
+```
+
+**Creating a new icon pack:** create a subfolder with any name inside `tnb-icons/` and place six SVG files inside it with these exact names: `home.svg`, `up.svg`, `last.svg`, `menu.svg`, `settings.svg`, `restart.svg`. The folder name will appear in the settings menu automatically after a restart.
+
+---
+
+#### Settings Menu
+
+All options are accessible via **File Browser → ☰ → Settings → Navbar & Status bar**.
+
+**Navbar bar:**
+
+- **Display mode** *(restart required)* — `Icons only`, `Text only`, or `Icons + Text`
+- **Show separator line** — thin line above the navbar, toggled live
+- **Lock home** — prevents the Up button from navigating above the home directory
+- **Icon pack** *(restart required)* — lists all packs found in `koreader/icons/tnb-icons/`; disabled if none found
+
+**Show pagination** *(restart required)* — shows or hides the `« < Page 1 of 2 > »` footer
+
+**Status bar:**
+
+- **Show status bar** *(restart required)*
+- **Left side** — `Clock` or `Info` mode, toggled live
+- **Custom model name** — replaces the device model string shown in Info mode (input dialog, live)
+- **Show border** — thin line below the status bar, toggled live
+- **WiFi indicator** — toggled live
+- **Frontlight indicator** — toggled live; warmth shown automatically if supported
+- **RAM indicator** — toggled live
+- **RAM pattern** — input dialog with placeholder reference, live preview in menu item title
+- **SSH indicator** — toggled live
+- **Battery indicator** — toggled live

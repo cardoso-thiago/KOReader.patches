@@ -9,6 +9,8 @@
 
 Shows a confirmation dialog **before opening a book for the first time** on the device.
 
+![first_open](assets/first_open.png)
+
 ### [🞂 disable-wifi-off-notification](2-disable-wifi-off-notification.lua)
 
 Blocks the "wi-fi off" notification from appearing in the UI by filtering popup messages.
@@ -39,9 +41,11 @@ Modifies the folder cover display in Mosaic/Grid view. If a folder contains fewe
 
 ### [🞂 wifi-auto-off-monitor](2-wifi-auto-off-monitor.lua)
 
-Monitors WiFi connection and displays a confirmation dialog after 30 seconds of continuous WiFi activity. Allows users to either keep WiFi enabled or turn it off with a single action. The dialog won't appear while the device is in screensaver mode, preventing unnecessary interruptions during sleep.
+Monitors WiFi and SSH server status, displaying a confirmation dialog after 30 seconds of continuous activity. Allows users to either keep them enabled, turn both off with a single action, or snooze the prompt for a configurable number of minutes. The dialog won't appear while the device is in screensaver mode, preventing unnecessary interruptions during sleep.
 
-### [🞂 hide-single-page-nav](2-hide-single-page-nav.lua)
+![monitor_ssh_wifi](assets/monitor_wifi.png)
+
+### [🞂 pt-hide-single-page-nav](2-pt-hide-single-page-nav.lua)
 
 Hides the entire bottom navigation bar (<< < 1 > >>) in the file manager when a folder contains only one page of items.
 
@@ -60,6 +64,8 @@ Replaces the KOReader file browser title bar with a **custom status bar** and ad
 
 > **Inspired by:** [u/doctorhetfield](https://www.reddit.com/user/doctorhetfield/) (initial concept)  
 > **Code references:** [qewer33/koreader-patches](https://github.com/qewer33/koreader-patches) (pagination hiding approach and general patch architecture)
+
+![title_navbar](assets/title_navbar.png)
 
 ---
 
@@ -116,9 +122,9 @@ The RAM indicator uses a free-form pattern string with the following placeholder
 
 Any literal text and symbols can be used freely between placeholders. Examples:
 
-- `$k%` → `3%` *(default)*
-- `$k% ($KMB)` → `3% (48MB)`
-- `$k% ($KMB / $AgGB)` → `3% (48MB / 7.62GB)`
+- `$k%`: `3%` *(default)*
+- `$k% ($KMB)`: `3% (48MB)`
+- `$k% ($KMB / $AgGB)`: `3% (48MB / 7.62GB)`
 
 ---
 
@@ -150,7 +156,7 @@ koreader/
 
 #### Settings Menu
 
-All options are accessible via **File Browser → ☰ → Settings → Navbar & Status bar**.
+All options are accessible via **File Browser > ☰ > Settings > Navbar & Status bar**.
 
 **Navbar bar:**
 
@@ -159,7 +165,7 @@ All options are accessible via **File Browser → ☰ → Settings → Navbar & 
 - **Lock home** — prevents the Up button from navigating above the home directory
 - **Icon pack** *(restart required)* — lists all packs found in `koreader/icons/tnb-icons/`; disabled if none found
 
-**Show pagination** *(restart required)* — shows or hides the `« < Page 1 of 2 > »` footer
+**Show pagination** *(restart required)* — shows or hides the `<< < Page 1 of 2 > >>` footer
 
 **Status bar:**
 
@@ -170,6 +176,6 @@ All options are accessible via **File Browser → ☰ → Settings → Navbar & 
 - **WiFi indicator** — toggled live
 - **Frontlight indicator** — toggled live; warmth shown automatically if supported
 - **RAM indicator** — toggled live
-- **RAM pattern** — input dialog with placeholder reference, live preview in menu item title
+- **RAM pattern** — input dialog with placeholder reference
 - **SSH indicator** — toggled live
 - **Battery indicator** — toggled live

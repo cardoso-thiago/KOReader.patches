@@ -95,6 +95,8 @@ A custom top bar that replaces the default KOReader title. The left side shows t
 - `"clock"` — time only
 - `"info"` — time · device model (on home folder) or time · current folder name (elsewhere)
 
+An optional **page indicator** can be appended to the left side (see below).
+
 **Right side indicators** (each individually toggleable):
 
 - WiFi status
@@ -102,6 +104,21 @@ A custom top bar that replaces the default KOReader title. The left side shows t
 - RAM usage with configurable pattern
 - SSH indicator, shown only while the server is running
 - Battery
+
+---
+
+#### Page Indicator
+
+When enabled, appends the current folder page position to the left side of the status bar, right after the clock or folder name. Uses a free-form pattern string:
+
+| Placeholder | Value |
+|-------------|-------|
+| `$p` | Current page |
+| `$P` | Total pages |
+
+Default pattern: `($p/$P)` → displayed as `(2/4)`.
+
+The indicator updates in real time when navigating between pages. By default it is shown even on single-page folders; enabling **Hide on single-page folders** suppresses it when the folder fits on one page.
 
 ---
 
@@ -179,3 +196,6 @@ All options are accessible via **File Browser > ☰ > Settings > Navbar & Status
 - **RAM pattern** — input dialog with placeholder reference
 - **SSH indicator** — toggled live
 - **Battery indicator** — toggled live
+- **Page indicator** — toggled live; appended to the left side after clock/folder name
+- **Page pattern** — input dialog with `$p`/`$P` reference, live preview in menu item title; only available when page indicator is enabled
+- **Hide on single-page folders** — suppresses the indicator when the folder fits on one page; only available when page indicator is enabled

@@ -31,6 +31,10 @@ local CFG = {
     titlebar_ram_pattern  = "$k%",
     titlebar_show_ssh     = true,
     titlebar_show_battery = true,
+
+    titlebar_show_page    = false,
+    titlebar_page_pattern = "($p/$P)",
+    titlebar_page_always  = true,
 }
 
 local FrameContainer  = require("ui/widget/container/framecontainer")
@@ -106,6 +110,9 @@ local function _saveSettings()
         titlebar_ram_pattern  = CFG.titlebar_ram_pattern,
         titlebar_show_ssh     = CFG.titlebar_show_ssh,
         titlebar_show_battery = CFG.titlebar_show_battery,
+        titlebar_show_page    = CFG.titlebar_show_page,
+        titlebar_page_pattern = CFG.titlebar_page_pattern,
+        titlebar_page_always  = CFG.titlebar_page_always,
     })
 end
 
@@ -290,6 +297,17 @@ local function _tbBuildStatusRow()
             extra = path and (path:match("([^/]+)/?$") or path) or nil
         end
         if extra then left_text = left_text .. sep .. extra end
+    end
+    if CFG.titlebar_show_page then
+        local fc = fm_ref and fm_ref.file_chooser
+        local cur_page   = fc and fc.page     or 1
+        local total_page = fc and fc.page_num or 1
+        if CFG.titlebar_page_always or total_page > 1 then
+            local page_str = (CFG.titlebar_page_pattern or "($p/$P)")
+                :gsub("%$p", tostring(cur_page))
+                :gsub("%$P", tostring(total_page))
+            left_text = left_text .. sep .. page_str
+        end
     end
     local left = TextWidget:new{ text = left_text, face = _tb_bar_font }
 
@@ -659,6 +677,18 @@ FileManager.setupLayout = function(fm_self)
         if CFG.titlebar then _nbUpdateStatusBar(this) end
     end
 
+    if CFG.titlebar_show_page then
+        local fc = fm_self.file_chooser
+        if fc then
+            local orig_onGotoPage = fc.onGotoPage
+            fc.onGotoPage = function(this, page)
+                local result = orig_onGotoPage and orig_onGotoPage(this, page)
+                _nbUpdateStatusBar(fm_self)
+                return result
+            end
+        end
+    end
+
     if CFG.titlebar then
         local function _refreshTB() _nbUpdateStatusBar(fm_self) end
         for _, ev in ipairs({ "onNetworkConnected", "onNetworkDisconnected", "onCharging", "onNotCharging", "onResume" }) do
@@ -873,6 +903,48 @@ function FileManagerMenu:setUpdateItemTable()
                         text = "Battery indicator",
                         checked_func = function() return CFG.titlebar_show_battery end,
                         callback = function() CFG.titlebar_show_battery = not CFG.titlebar_show_battery; _saveSettings(); refreshTitlebar() end,
+                    },
+                    {
+                        text = "Page indicator",
+                        checked_func = function() return CFG.titlebar_show_page end,
+                        callback = function() CFG.titlebar_show_page = not CFG.titlebar_show_page; _saveSettings(); refreshTitlebar() end,
+                    },
+                    {
+                        text_func = function()
+                            return "Page pattern  —  " .. (CFG.titlebar_page_pattern or "($p/$P)")
+                        end,
+                        enabled_func = function() return CFG.titlebar_show_page end,
+                        keep_menu_open = true,
+                        callback = function(touchmenu_instance)
+                            local InputDialog = require("ui/widget/inputdialog")
+                            local dlg
+                            dlg = InputDialog:new{
+                                title = "Page display pattern",
+                                input = CFG.titlebar_page_pattern or "($p/$P)",
+                                description = "$p  Current page\n$P  Total pages",
+                                buttons = {{
+                                    { text = "Cancel", id = "close",
+                                      callback = function() UIManager:close(dlg) end },
+                                    { text = "Set", is_enter_default = true,
+                                      callback = function()
+                                          local val = dlg:getInputText()
+                                          CFG.titlebar_page_pattern = val ~= "" and val or "($p/$P)"
+                                          UIManager:close(dlg)
+                                          _saveSettings()
+                                          refreshTitlebar()
+                                          if touchmenu_instance then touchmenu_instance:updateItems() end
+                                      end },
+                                }},
+                            }
+                            UIManager:show(dlg)
+                            dlg:onShowKeyboard()
+                        end,
+                    },
+                    {
+                        text = "Hide on single-page folders",
+                        enabled_func = function() return CFG.titlebar_show_page end,
+                        checked_func = function() return not CFG.titlebar_page_always end,
+                        callback = function() CFG.titlebar_page_always = not CFG.titlebar_page_always; _saveSettings(); refreshTitlebar() end,
                     },
                 },
             },

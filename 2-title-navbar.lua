@@ -515,6 +515,8 @@ local function execute(tab, target)
         end)
 
     elseif tab.id == "restart" then
+        local Event = require("ui/event")
+        UIManager:broadcastEvent(Event:new("FlushSettings"))
         G_reader_settings:flush()
         local ok, EC = pcall(require, "exitcode")
         UIManager:quit((ok and EC and EC.restart) or 85)
@@ -677,13 +679,19 @@ FileManager.setupLayout = function(fm_self)
         if CFG.titlebar then _nbUpdateStatusBar(this) end
     end
 
-    if CFG.titlebar_show_page then
+    do
         local fc = fm_self.file_chooser
         if fc then
             local orig_onGotoPage = fc.onGotoPage
             fc.onGotoPage = function(this, page)
                 local result = orig_onGotoPage and orig_onGotoPage(this, page)
-                _nbUpdateStatusBar(fm_self)
+                if CFG.titlebar_show_page then _nbUpdateStatusBar(fm_self) end
+                return result
+            end
+            local orig_switchItemTable = fc.switchItemTable
+            fc.switchItemTable = function(this, ...)
+                local result = orig_switchItemTable and orig_switchItemTable(this, ...)
+                if CFG.titlebar_show_page then _nbUpdateStatusBar(fm_self) end
                 return result
             end
         end

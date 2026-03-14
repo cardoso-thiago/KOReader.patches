@@ -515,11 +515,14 @@ local function execute(tab, target)
         end)
 
     elseif tab.id == "restart" then
-        local Event = require("ui/event")
-        UIManager:broadcastEvent(Event:new("FlushSettings"))
-        G_reader_settings:flush()
-        local ok, EC = pcall(require, "exitcode")
-        UIManager:quit((ok and EC and EC.restart) or 85)
+        UIManager:show(InfoMessage:new{ text = "Restarting KOReader…", timeout = 10 })
+        UIManager:scheduleIn(0.5, function()
+            local Event = require("ui/event")
+            UIManager:broadcastEvent(Event:new("FlushSettings"))
+            G_reader_settings:flush()
+            local ok, EC = pcall(require, "exitcode")
+            UIManager:quit((ok and EC and EC.restart) or 85)
+        end)
     end
 end
 
